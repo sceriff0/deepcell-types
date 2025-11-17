@@ -143,7 +143,7 @@ def predict(raw, mask, channel_names, mpp, model_name, device_num, batch_size=25
             ct_exclude = None
             if tissue_exclude:
                 ct_exclude = [[i for i in range(len(ct_embeddings)) if i not in [dct_config.ct2idx[i] for i in tct[tissue_exclude]]] for _ in range(len(sample))]
-            _, _, _, _, probs, _ = model(
+            _, _, _, marker_pos_attn, probs, _ = model(
                 sample.to(device),
                 ch_idx.to(device),
                 attn_mask.to(device),
@@ -152,13 +152,15 @@ def predict(raw, mask, channel_names, mpp, model_name, device_num, batch_size=25
 
             pred_logger.log(
                 probs=probs.cpu().detach().numpy(),
+                marker_pos_attn=marker_pos_attn.cpu().detach().numpy(),
                 cell_index=cell_index.detach().cpu().numpy(),
             )
 
 
         result = pred_logger.get_result()
         cell_types = result[0]
+        marker_pos = results[1]
     
-    return cell_types
+    return cell_types, marker_pos
 
 
