@@ -16,21 +16,30 @@ class PredLogger:
     def __init__(self):
         self.probs = []
         self.cell_index = []
+        self.marker_pos_attn = []
 
-    def log(self, probs, cell_index):
+    def log(self, probs, cell_index, marker_pos_attn=None):
         self.probs.append(probs)
         self.cell_index.append(cell_index)
+        if marker_pos_attn is not None:
+            self.marker_pos_attn.append(marker_pos_attn)
 
     def get_result(self):
         idx2ct = {v: k for k, v in dct_config.ct2idx.items()}
         probs = np.concatenate(self.probs)
         cell_index = np.concatenate(self.cell_index)
-        
+
         top_probs = np.max(probs, axis=1)
         cell_type_int_pred = np.argmax(probs, axis=1)
         cell_type_str_pred = [idx2ct[i] for i in cell_type_int_pred]
-        
-        return cell_type_str_pred, top_probs, cell_index
+
+        marker_pos = (
+            np.concatenate(self.marker_pos_attn)
+            if self.marker_pos_attn else None
+        )
+
+        return cell_type_str_pred, top_probs, cell_index, marker_pos
+
 
 
 def predict(raw, mask, channel_names, mpp, model_name, device_num, batch_size=256, num_workers=24, tissue_exclude=None): 
@@ -159,7 +168,7 @@ def predict(raw, mask, channel_names, mpp, model_name, device_num, batch_size=25
 
         result = pred_logger.get_result()
         cell_types = result[0]
-        marker_pos = results[1]
+        marker_pos = result[1]
     
     return cell_types, marker_pos
 
